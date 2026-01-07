@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spline Debug Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Spline Debug Test</h1>
+    <div id="results"></div>
+    
+    <div class="spline-object" data-animation-type="spline" data-spline-url="https://cdn.prod.website-files.com/675835c7f4ae1fa1a79b3733/headless.splinecode">
+        <canvas style="width: 100%; height: 400px;"></canvas>
+    </div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type) {
+            const div = document.createElement('div');
+            div.className = 'test ' + (type || 'info');
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        // Test 1: Check Webflow
+        log('Test 1: Checking for Webflow...');
+        if (typeof window.Webflow !== 'undefined') {
+            log('✓ Webflow found', 'success');
+            if (window.Webflow.require) {
+                log('✓ Webflow.require available', 'success');
+            } else {
+                log('✗ Webflow.require not available', 'error');
+            }
+        } else {
+            log('✗ Webflow not found', 'error');
+        }
+        
+        // Test 2: Load Spline runtime
+        log('Test 2: Loading Spline runtime...');
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.0.0/build/runtime.js';
+        script.onload = function() {
+            log('✓ Spline runtime loaded', 'success');
+            
+            // Test 3: Initialize Spline
+            setTimeout(function() {
+                log('Test 3: Initializing Spline model...');
+                const element = document.querySelector('[data-animation-type="spline"]');
+                const canvas = element.querySelector('canvas');
+                const url = element.getAttribute('data-spline-url');
+                
+                if (typeof window.Application !== 'undefined') {
+                    log('✓ Application class available', 'success');
+                    try {
+                        const app = new window.Application(canvas);
+                        log('✓ Application instance created', 'success');
+                        app.load(url).then(function() {
+                            log('✓ Spline model loaded successfully!', 'success');
+                        }).catch(function(err) {
+                            log('✗ Failed to load model: ' + err, 'error');
+                        });
+                    } catch (err) {
+                        log('✗ Error creating Application: ' + err, 'error');
+                    }
+                } else {
+                    log('✗ Application class not available', 'error');
+                }
+            }, 500);
+        };
+        script.onerror = function() {
+            log('✗ Failed to load Spline runtime', 'error');
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
+
+

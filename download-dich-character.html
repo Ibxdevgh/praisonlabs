@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download DICH Spline Character</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #555;
+            margin: 10px 0;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0a0;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #0f0;
+            margin-top: 20px;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .info { color: #0ff; }
+        .instructions {
+            background: #333;
+            padding: 15px;
+            border-left: 4px solid #0f0;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Download DICH Fashion Spline Character</h1>
+    
+    <div class="container">
+        <h2>Step 1: Find the Spline URL</h2>
+        <div class="instructions">
+            <ol>
+                <li>Open <a href="https://dich-fashion.webflow.io/" target="_blank" style="color: #0ff;">https://dich-fashion.webflow.io/</a></li>
+                <li>Press <strong>F12</strong> → <strong>Network</strong> tab</li>
+                <li>Filter by <code>spline</code> or <code>.splinecode</code></li>
+                <li>Reload the page (<strong>F5</strong>)</li>
+                <li>Find the <code>.splinecode</code> file request</li>
+                <li>Right-click → <strong>Copy</strong> → <strong>Copy URL</strong></li>
+            </ol>
+        </div>
+        
+        <h2>Step 2: Paste URL and Download</h2>
+        <input type="text" id="splineUrl" placeholder="Paste Spline URL here (e.g., https://prod.spline.design/.../scene.splinecode)">
+        <br>
+        <button onclick="downloadFile()">Download Character</button>
+        <button onclick="testUrl()">Test URL First</button>
+    </div>
+    
+    <div class="container">
+        <h2>Alternative: Browser Download Method</h2>
+        <div class="instructions">
+            <p><strong>Easiest Method:</strong></p>
+            <ol>
+                <li>Open the website and find the character</li>
+                <li>Open <strong>Network</strong> tab in DevTools</li>
+                <li>Filter by <code>.splinecode</code></li>
+                <li>Reload page</li>
+                <li>Right-click the <code>.splinecode</code> file</li>
+                <li>Select <strong>Open in new tab</strong></li>
+                <li>Right-click → <strong>Save As</strong></li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="log" id="log">
+        <p class="info">[Ready] Paste the Spline URL above and click Download</p>
+    </div>
+    
+    <script>
+        const log = document.getElementById('log');
+        const urlInput = document.getElementById('splineUrl');
+        
+        function addLog(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        function testUrl() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                addLog('Please enter a URL', 'error');
+                return;
+            }
+            
+            addLog('Testing URL: ' + url, 'info');
+            
+            // Test with fetch
+            fetch(url, { 
+                method: 'HEAD',
+                mode: 'no-cors'
+            })
+            .then(() => {
+                addLog('URL appears to be accessible (CORS may still block download)', 'info');
+            })
+            .catch((error) => {
+                addLog('Could not verify URL: ' + error.message, 'error');
+            });
+            
+            // Check if it's a valid URL
+            try {
+                const urlObj = new URL(url);
+                addLog('URL format is valid', 'success');
+                addLog('Domain: ' + urlObj.hostname, 'info');
+                addLog('Path: ' + urlObj.pathname, 'info');
+            } catch (e) {
+                addLog('Invalid URL format', 'error');
+            }
+        }
+        
+        function downloadFile() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                addLog('Please enter a URL first', 'error');
+                return;
+            }
+            
+            addLog('Attempting to download: ' + url, 'info');
+            
+            // Method 1: Try fetch with blob
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Referer': 'https://dich-fashion.webflow.io/'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                addLog('Download successful! File size: ' + blob.size + ' bytes', 'success');
+                
+                // Create download link
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                
+                // Extract filename from URL
+                const urlParts = url.split('/');
+                const filename = urlParts[urlParts.length - 1] || 'spline-character.splinecode';
+                a.download = filename;
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                window.URL.revokeObjectURL(downloadUrl);
+                
+                addLog('File saved as: ' + filename, 'success');
+            })
+            .catch(error => {
+                addLog('Download failed: ' + error.message, 'error');
+                addLog('This is likely due to CORS protection', 'error');
+                addLog('Try the browser method instead (see instructions above)', 'info');
+                
+                // Fallback: Open in new tab
+                addLog('Opening URL in new tab as fallback...', 'info');
+                window.open(url, '_blank');
+            });
+        }
+        
+        // Auto-detect if URL is pasted
+        urlInput.addEventListener('paste', function() {
+            setTimeout(() => {
+                const url = urlInput.value.trim();
+                if (url && (url.includes('spline') || url.includes('.splinecode'))) {
+                    addLog('URL detected! Click Download to start', 'info');
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>
+

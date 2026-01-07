@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webflow Spline Test</title>
+    <style>
+        body { padding: 20px; font-family: Arial; }
+        .container { width: 800px; height: 600px; border: 2px solid #333; margin: 20px 0; background: #f0f0f0; }
+        #status { padding: 10px; background: #000; color: #0f0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Webflow Spline Test</h1>
+    <div id="status">Initializing...</div>
+    
+    <!-- Exact structure from index.htm -->
+    <div class="container">
+        <div class="spline-object" data-animation-type="spline" data-spline-url="https://cdn.prod.website-files.com/675835c7f4ae1fa1a79b3733/headless.splinecode" data-w-id="088ad15a-f493-0593-0de3-c26aef9fa446">
+            <canvas></canvas>
+        </div>
+    </div>
+    
+    <!-- Load Webflow scripts first -->
+    <script src="https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.0.0/build/runtime.js"></script>
+    
+    <script>
+        const status = document.getElementById('status');
+        
+        function log(msg, color) {
+            status.innerHTML += '<div style="color: ' + (color || '#0f0') + '">' + msg + '</div>';
+            console.log(msg);
+        }
+        
+        log('Page loaded');
+        
+        // Wait for runtime
+        function checkRuntime() {
+            if (typeof window.Application !== 'undefined') {
+                log('✓ Spline runtime loaded');
+                initDirectly();
+            } else {
+                log('Waiting for runtime...');
+                setTimeout(checkRuntime, 100);
+            }
+        }
+        
+        function initDirectly() {
+            const element = document.querySelector('[data-animation-type="spline"]');
+            const canvas = element.querySelector('canvas');
+            const url = element.getAttribute('data-spline-url');
+            
+            log('Element found: ' + !!element);
+            log('Canvas found: ' + !!canvas);
+            log('URL: ' + url);
+            
+            if (!canvas || !url) {
+                log('Missing canvas or URL!', '#f00');
+                return;
+            }
+            
+            // Set canvas size
+            const rect = element.getBoundingClientRect();
+            canvas.width = rect.width || 800;
+            canvas.height = rect.height || 600;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            
+            log('Canvas size: ' + canvas.width + 'x' + canvas.height);
+            
+            try {
+                log('Creating Application...');
+                const app = new window.Application(canvas);
+                log('Application created');
+                
+                log('Loading model from: ' + url);
+                app.load(url).then(function() {
+                    log('✓✓✓ SUCCESS! Model loaded!', '#0f0');
+                    
+                    // Test if it's rendering
+                    setTimeout(function() {
+                        const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+                        if (ctx) {
+                            log('WebGL context available');
+                        } else {
+                            log('WARNING: No WebGL context', '#ff0');
+                        }
+                    }, 1000);
+                }).catch(function(error) {
+                    log('ERROR loading: ' + error.message, '#f00');
+                    log('Error type: ' + error.name, '#f00');
+                    log('Stack: ' + (error.stack || 'N/A'), '#f00');
+                    
+                    // Try fetching the URL directly to check CORS
+                    fetch(url, { mode: 'no-cors' }).then(function() {
+                        log('URL is accessible (no-cors)', '#0ff');
+                    }).catch(function(e) {
+                        log('URL fetch error: ' + e.message, '#f00');
+                    });
+                });
+            } catch (error) {
+                log('ERROR creating Application: ' + error.message, '#f00');
+                log('Error type: ' + error.name, '#f00');
+            }
+        }
+        
+        // Start after DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(checkRuntime, 500);
+            });
+        } else {
+            setTimeout(checkRuntime, 500);
+        }
+    </script>
+</body>
+</html>
+
+

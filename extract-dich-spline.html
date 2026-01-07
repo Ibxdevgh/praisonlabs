@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extract DICH Spline Character</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .instructions {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #0f0;
+            margin-top: 20px;
+        }
+        .url-display {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #0f0;
+            word-break: break-all;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0a0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Extract Spline Character from DICH Fashion Website</h1>
+        
+        <div class="instructions">
+            <h2>Method 1: Manual Extraction (Recommended)</h2>
+            <ol>
+                <li>Open <a href="https://dich-fashion.webflow.io/" target="_blank">https://dich-fashion.webflow.io/</a> in your browser</li>
+                <li>Press <strong>F12</strong> to open Developer Tools</li>
+                <li>Go to the <strong>Network</strong> tab</li>
+                <li>Filter by "spline" or ".splinecode"</li>
+                <li>Reload the page (F5)</li>
+                <li>Look for requests to `.splinecode` files</li>
+                <li>Copy the URL and paste it below</li>
+            </ol>
+            
+            <h2>Method 2: Inspect HTML Source</h2>
+            <ol>
+                <li>Open the website and press <strong>Ctrl+U</strong> (or right-click → View Page Source)</li>
+                <li>Press <strong>Ctrl+F</strong> and search for "spline"</li>
+                <li>Look for attributes like <code>data-spline-url</code> or <code>url=</code> in spline-viewer tags</li>
+                <li>Copy the URL</li>
+            </ol>
+        </div>
+        
+        <div>
+            <h2>Paste Spline URL Here:</h2>
+            <input type="text" id="splineUrl" placeholder="https://..." style="width: 100%; padding: 10px; font-size: 14px; background: #2a2a2a; color: #fff; border: 1px solid #555;">
+            <br><br>
+            <button onclick="testUrl()">Test URL</button>
+            <button onclick="updateTestFile()">Update Test File</button>
+        </div>
+        
+        <div id="urlDisplay" class="url-display" style="display: none;">
+            <h3>Found Spline URL:</h3>
+            <div id="foundUrl"></div>
+        </div>
+        
+        <div class="log" id="log">
+            <p>[Ready] Waiting for URL input...</p>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h2>Test the Character:</h2>
+            <div id="testContainer" style="width: 100%; height: 600px; background: #000; border: 2px solid #555; position: relative;">
+                <!-- Spline viewer will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@latest/build/spline-viewer.js"></script>
+    <script>
+        const log = document.getElementById('log');
+        const urlInput = document.getElementById('splineUrl');
+        const urlDisplay = document.getElementById('urlDisplay');
+        const foundUrl = document.getElementById('foundUrl');
+        const testContainer = document.getElementById('testContainer');
+        
+        function addLog(message, type = 'info') {
+            const p = document.createElement('p');
+            p.style.color = type === 'error' ? '#f00' : type === 'success' ? '#0f0' : '#0ff';
+            p.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        function testUrl() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                addLog('Please enter a URL', 'error');
+                return;
+            }
+            
+            addLog('Testing URL: ' + url, 'info');
+            
+            // Check if URL is valid
+            try {
+                new URL(url);
+            } catch (e) {
+                addLog('Invalid URL format', 'error');
+                return;
+            }
+            
+            // Test if URL is accessible
+            fetch(url, { method: 'HEAD', mode: 'no-cors' })
+                .then(() => {
+                    addLog('URL format is valid', 'success');
+                    displayUrl(url);
+                    loadSplineViewer(url);
+                })
+                .catch((error) => {
+                    addLog('Could not verify URL (this is OK - CORS may block it)', 'info');
+                    displayUrl(url);
+                    loadSplineViewer(url);
+                });
+        }
+        
+        function displayUrl(url) {
+            foundUrl.textContent = url;
+            urlDisplay.style.display = 'block';
+            addLog('URL saved: ' + url, 'success');
+        }
+        
+        function loadSplineViewer(url) {
+            // Wait for spline-viewer to be available
+            function waitAndCreate() {
+                if (customElements.get('spline-viewer')) {
+                    addLog('spline-viewer is ready!', 'success');
+                    
+                    // Clear container
+                    testContainer.innerHTML = '';
+                    
+                    // Create viewer
+                    const viewer = document.createElement('spline-viewer');
+                    viewer.setAttribute('url', url);
+                    viewer.style.width = '100%';
+                    viewer.style.height = '100%';
+                    viewer.style.display = 'block';
+                    
+                    viewer.addEventListener('load', () => {
+                        addLog('SUCCESS: Spline character loaded!', 'success');
+                    });
+                    
+                    viewer.addEventListener('error', (e) => {
+                        addLog('ERROR: Failed to load - ' + (e.detail || JSON.stringify(e)), 'error');
+                    });
+                    
+                    testContainer.appendChild(viewer);
+                    addLog('Created spline-viewer element', 'info');
+                } else {
+                    setTimeout(waitAndCreate, 100);
+                }
+            }
+            
+            waitAndCreate();
+        }
+        
+        function updateTestFile() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                addLog('Please enter a URL first', 'error');
+                return;
+            }
+            
+            addLog('To update test-spline.html, copy this URL and update the viewer URLs:', 'info');
+            addLog('URL: ' + url, 'success');
+            addLog('Open test-spline.html and replace the URLs in the createSplineViewers function', 'info');
+        }
+        
+        // Try to auto-detect from page source (if same origin)
+        addLog('Ready to extract Spline URL', 'info');
+        addLog('Follow the instructions above to find the Spline URL', 'info');
+    </script>
+</body>
+</html>
+

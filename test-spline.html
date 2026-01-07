@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spline Test</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial; }
+        .test-container { margin: 20px 0; padding: 20px; border: 2px solid #333; }
+        .spline-container { 
+            width: 100%; 
+            height: 500px; 
+            background: #f0f0f0; 
+            margin: 20px 0; 
+            position: relative;
+            overflow: hidden;
+        }
+        .spline-object, .spline-object-mission {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        canvas { 
+            width: 100% !important; 
+            height: 100% !important; 
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        spline-viewer { 
+            width: 100% !important; 
+            height: 100% !important; 
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #log { background: #000; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Spline 3D Model Test</h1>
+    
+    <div class="test-container">
+        <h2>Test 1: DICH Fashion Character (spline-viewer)</h2>
+        <div class="spline-container" id="viewer1">
+            <!-- Viewer will be created dynamically -->
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 2: Mission Rock (spline-viewer)</h2>
+        <div class="spline-container" id="viewer2">
+            <!-- Viewer will be created dynamically -->
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 3: Hero Character (Application API)</h2>
+        <div class="spline-container">
+            <div class="spline-object" data-animation-type="spline" data-spline-url="headless.splinecode">
+                <canvas></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div id="log"></div>
+    
+    <!-- Load Spline Viewer - Standard approach -->
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@latest/build/spline-viewer.js" id="spline-viewer-script"></script>
+    <script>
+        // Monitor if the viewer script loads
+        document.getElementById('spline-viewer-script').addEventListener('load', function() {
+            console.log('spline-viewer script loaded successfully');
+            const logEl = document.getElementById('log');
+            if (logEl) {
+                const p = document.createElement('p');
+                p.textContent = '[Script Loader] spline-viewer script loaded';
+                p.style.color = '#0f0';
+                logEl.appendChild(p);
+            }
+        });
+        document.getElementById('spline-viewer-script').addEventListener('error', function(e) {
+            console.error('spline-viewer script failed to load', e);
+            const logEl = document.getElementById('log');
+            if (logEl) {
+                const p = document.createElement('p');
+                p.textContent = '[Script Loader] ERROR: spline-viewer script failed to load - ' + (e.message || 'Unknown error');
+                p.style.color = '#f00';
+                logEl.appendChild(p);
+            }
+        });
+    </script>
+    <!-- Also load runtime for Application API tests - Try multiple CDNs -->
+    <script>
+        // Try loading runtime from multiple sources
+        (function() {
+            const scripts = [
+                'https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.9.0/build/runtime.js',
+                'https://unpkg.com/@splinetool/runtime@1.9.0/build/runtime.js',
+                'https://cdn.jsdelivr.net/npm/@splinetool/runtime@latest/build/runtime.js'
+            ];
+            
+            let currentIndex = 0;
+            
+            function loadNext() {
+                if (currentIndex >= scripts.length) {
+                    const logEl = document.getElementById('log');
+                    if (logEl) {
+                        const p = document.createElement('p');
+                        p.textContent = '[Runtime Loader] Failed to load Spline runtime from all sources (this is OK - spline-viewer works without it)';
+                        p.style.color = '#ff0';
+                        logEl.appendChild(p);
+                    }
+                    console.error('Failed to load Spline runtime from all sources');
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = scripts[currentIndex];
+                script.onload = function() {
+                    const logEl = document.getElementById('log');
+                    if (logEl) {
+                        const p = document.createElement('p');
+                        p.textContent = '[Runtime Loader] Spline runtime loaded from: ' + scripts[currentIndex];
+                        p.style.color = '#0f0';
+                        logEl.appendChild(p);
+                    }
+                    console.log('Spline runtime loaded from: ' + scripts[currentIndex]);
+                    // Check if Application is available
+                    setTimeout(function() {
+                        if (typeof window.Application !== 'undefined') {
+                            console.log('Application API is available');
+                            if (logEl) {
+                                const p = document.createElement('p');
+                                p.textContent = '[Runtime Loader] Application API is available';
+                                p.style.color = '#0f0';
+                                logEl.appendChild(p);
+                            }
+                        } else {
+                            console.warn('Application API not found after loading runtime');
+                            if (logEl) {
+                                const p = document.createElement('p');
+                                p.textContent = '[Runtime Loader] Warning: Application API not found after loading';
+                                p.style.color = '#ff0';
+                                logEl.appendChild(p);
+                            }
+                        }
+                    }, 500);
+                };
+                script.onerror = function() {
+                    const logEl = document.getElementById('log');
+                    if (logEl && currentIndex < scripts.length - 1) {
+                        const p = document.createElement('p');
+                        p.textContent = '[Runtime Loader] Failed to load from: ' + scripts[currentIndex] + ', trying next...';
+                        p.style.color = '#ff0';
+                        logEl.appendChild(p);
+                    }
+                    console.warn('Failed to load from: ' + scripts[currentIndex]);
+                    currentIndex++;
+                    loadNext();
+                };
+                document.head.appendChild(script);
+            }
+            
+            loadNext();
+        })();
+    </script>
+    <script>
+        const log = document.getElementById('log');
+        
+        function addLog(message, type) {
+            const p = document.createElement('p');
+            p.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            p.style.color = type === 'error' ? '#f00' : type === 'success' ? '#0f0' : '#0ff';
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        addLog('Page loaded, initializing Spline...');
+        
+        // Check script loading status
+        window.addEventListener('error', function(e) {
+            if (e.filename && (e.filename.includes('spline') || e.filename.includes('runtime'))) {
+                addLog('Script loading error: ' + e.message + ' from ' + e.filename, 'error');
+            }
+        }, true);
+        
+        // Create spline-viewer elements dynamically
+        function createSplineViewers() {
+            if (!customElements.get('spline-viewer')) {
+                addLog('spline-viewer not available yet, waiting...', 'info');
+                return false;
+            }
+            
+            addLog('Creating spline-viewer elements dynamically...', 'info');
+            
+            const viewers = [
+                { container: 'viewer1', url: 'headless.splinecode', name: 'Hero Character' },
+                { container: 'viewer2', url: 'rock.splinecode', name: 'Mission Rock' }
+            ];
+            
+            // TODO: Replace the first URL with the DICH Fashion character URL
+            // To find it: 
+            // 1. Open https://dich-fashion.webflow.io/ in browser
+            // 2. Press F12 → Network tab → Filter "spline"
+            // 3. Reload page and find the .splinecode file URL
+            // 4. Replace the URL above with the found URL
+            
+            viewers.forEach(function(config, index) {
+                const container = document.getElementById(config.container);
+                if (!container) {
+                    addLog('Container ' + config.container + ' not found', 'error');
+                    return;
+                }
+                
+                // Check if viewer already exists
+                if (container.querySelector('spline-viewer')) {
+                    addLog('Viewer ' + (index + 1) + ' already exists', 'info');
+                    return;
+                }
+                
+                const viewer = document.createElement('spline-viewer');
+                viewer.setAttribute('url', config.url);
+                viewer.setAttribute('loading', 'lazy');
+                viewer.style.width = '100%';
+                viewer.style.height = '100%';
+                viewer.style.display = 'block';
+                
+                viewer.addEventListener('load', function() {
+                    addLog('SUCCESS: ' + config.name + ' loaded!', 'success');
+                });
+                
+                viewer.addEventListener('error', function(e) {
+                    addLog('ERROR: ' + config.name + ' failed: ' + (e.detail || JSON.stringify(e)), 'error');
+                    console.error('Viewer error:', e);
+                });
+                
+                container.appendChild(viewer);
+                addLog('Created viewer for ' + config.name + ' (URL: ' + config.url + ')', 'info');
+            });
+            
+            return true;
+        }
+        
+        // Check spline-viewer elements directly
+        function checkSplineViewers() {
+            const viewers = document.querySelectorAll('spline-viewer');
+            if (viewers.length > 0) {
+                addLog('Found ' + viewers.length + ' spline-viewer element(s)', 'info');
+                viewers.forEach(function(viewer, index) {
+                    const url = viewer.getAttribute('url');
+                    addLog('Viewer ' + (index + 1) + ' URL: ' + url, 'info');
+                });
+            }
+        }
+        
+        // Wait for Spline runtime to load (optional - only needed for Application API)
+        function waitForSplineRuntime(callback, maxAttempts = 30) {
+            let attempts = 0;
+            const checkInterval = setInterval(function() {
+                attempts++;
+                if (typeof window.Application !== 'undefined') {
+                    clearInterval(checkInterval);
+                    addLog('Spline runtime loaded!', 'success');
+                    if (callback) callback();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    addLog('Spline runtime not available (this is OK if using spline-viewer)', 'info');
+                    // Don't treat this as an error - spline-viewer doesn't need runtime
+                    if (callback) callback();
+                } else {
+                    if (attempts % 5 === 0) {
+                        addLog('Waiting for Spline runtime... (' + attempts + '/' + maxAttempts + ')');
+                    }
+                }
+            }, 200);
+        }
+        
+        function initializeSplineModels() {
+            // Only initialize Application API models if runtime is available
+            if (typeof window.Application === 'undefined') {
+                addLog('Application API not available - skipping Application API initialization', 'info');
+                return;
+            }
+            
+            addLog('Initializing Application API models...');
+            
+            const splineElements = document.querySelectorAll('[data-animation-type="spline"]');
+            addLog('Found ' + splineElements.length + ' Application API element(s)');
+            
+            // If no elements, return
+            if (splineElements.length === 0) {
+                return;
+            }
+            
+            // Otherwise, use Application API
+            splineElements.forEach(function(element, index) {
+                const url = element.getAttribute('data-spline-url');
+                let canvas = element.querySelector('canvas');
+                
+                if (!canvas) {
+                    addLog('Creating canvas for element ' + (index + 1));
+                    canvas = document.createElement('canvas');
+                    element.appendChild(canvas);
+                }
+                
+                // Get container dimensions
+                const container = element.closest('.spline-container') || element.parentElement;
+                const rect = container.getBoundingClientRect();
+                const width = Math.max(rect.width || 800, 800);
+                const height = Math.max(rect.height || 600, 500);
+                
+                // Set canvas size with device pixel ratio for crisp rendering
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                
+                addLog('Element ' + (index + 1) + ': URL=' + url);
+                addLog('Canvas size: ' + width + 'x' + height + ' (DPR: ' + dpr + ')');
+                
+                try {
+                    // Create Application with canvas
+                    const app = new window.Application(canvas);
+                    addLog('Application instance created for element ' + (index + 1), 'success');
+                    
+                    // Load the Spline scene
+                    app.load(url).then(function() {
+                        addLog('SUCCESS: Spline model ' + (index + 1) + ' loaded!', 'success');
+                        element._splineApp = app;
+                        
+                        // Set initial size
+                        if (app.setSize) {
+                            app.setSize(width, height);
+                        }
+                        
+                        // Handle window resize
+                        let resizeTimeout;
+                        function handleResize() {
+                            clearTimeout(resizeTimeout);
+                            resizeTimeout = setTimeout(function() {
+                                const newRect = container.getBoundingClientRect();
+                                const newWidth = Math.max(newRect.width || 800, 800);
+                                const newHeight = Math.max(newRect.height || 600, 500);
+                                
+                                canvas.width = newWidth * dpr;
+                                canvas.height = newHeight * dpr;
+                                canvas.style.width = newWidth + 'px';
+                                canvas.style.height = newHeight + 'px';
+                                
+                                if (app.setSize) {
+                                    app.setSize(newWidth, newHeight);
+                                }
+                                
+                                addLog('Resized element ' + (index + 1) + ' to ' + newWidth + 'x' + newHeight);
+                            }, 250);
+                        }
+                        
+                        window.addEventListener('resize', handleResize);
+                        
+                        // Force a render after a short delay to ensure everything is ready
+                        setTimeout(function() {
+                            if (app.render) {
+                                app.render();
+                            }
+                            addLog('Model ' + (index + 1) + ' should now be visible', 'success');
+                        }, 500);
+                        
+                    }).catch(function(error) {
+                        addLog('ERROR loading Spline model ' + (index + 1) + ': ' + (error.message || error), 'error');
+                        addLog('Error details: ' + JSON.stringify(error), 'error');
+                        console.error('Spline load error:', error);
+                        // Try fallback to spline-viewer
+                        setTimeout(function() {
+                            tryViewerFallback(element, index, url);
+                        }, 1000);
+                    });
+                    
+                } catch (error) {
+                    addLog('ERROR creating Application for element ' + (index + 1) + ': ' + error.message, 'error');
+                    console.error('Application creation error:', error);
+                    // Try fallback to spline-viewer
+                    setTimeout(function() {
+                        tryViewerFallback(element, index, url);
+                    }, 1000);
+                }
+            });
+        }
+        
+        // Fallback method: Use spline-viewer web component
+        function tryViewerFallback(element, index, url) {
+            addLog('Trying spline-viewer fallback for element ' + (index + 1));
+            
+            if (customElements.get('spline-viewer')) {
+                addLog('spline-viewer component available!', 'success');
+                
+                const container = element.closest('.spline-container') || element.parentElement;
+                const viewer = document.createElement('spline-viewer');
+                viewer.setAttribute('url', url);
+                viewer.setAttribute('loading', 'lazy');
+                viewer.style.width = '100%';
+                viewer.style.height = '100%';
+                viewer.style.display = 'block';
+                
+                // Replace the entire element content
+                element.innerHTML = '';
+                element.appendChild(viewer);
+                
+                addLog('SUCCESS: Created spline-viewer for element ' + (index + 1), 'success');
+            } else {
+                addLog('spline-viewer not available yet, waiting...');
+                setTimeout(function() {
+                    tryViewerFallback(element, index, url);
+                }, 500);
+            }
+        }
+        
+        // Start initialization when DOM is ready
+        function startInit() {
+            addLog('Starting Spline initialization...');
+            
+            // Wait for spline-viewer to be available and create viewers
+            function waitForViewerAndCreate(maxAttempts = 100) {
+                let attempts = 0;
+                const checkInterval = setInterval(function() {
+                    attempts++;
+                    const viewerReady = customElements.get('spline-viewer') !== undefined;
+                    
+                    if (viewerReady) {
+                        clearInterval(checkInterval);
+                        addLog('spline-viewer is ready!', 'success');
+                        if (createSplineViewers()) {
+                            checkSplineViewers();
+                        }
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        addLog('spline-viewer failed to load after ' + maxAttempts + ' attempts', 'error');
+                        addLog('Trying Application API fallback...', 'info');
+                        initializeSplineModels();
+                    } else {
+                        if (attempts % 10 === 0) {
+                            addLog('Waiting for spline-viewer... (' + attempts + '/' + maxAttempts + ')', 'info');
+                        }
+                    }
+                }, 100);
+            }
+            
+            waitForViewerAndCreate();
+            
+            // Also initialize Application API models (optional fallback)
+            waitForSplineRuntime(function() {
+                if (typeof window.Application !== 'undefined') {
+                    initializeSplineModels();
+                } else {
+                    addLog('Application API not available - using spline-viewer only', 'info');
+                }
+            });
+        }
+        
+        // Multiple initialization attempts to ensure it works
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(startInit, 500);
+            });
+        } else {
+            setTimeout(startInit, 500);
+        }
+        
+        window.addEventListener('load', function() {
+            setTimeout(startInit, 1000);
+        });
+    </script>
+</body>
+</html>
+

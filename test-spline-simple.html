@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spline Simple Test</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            font-family: Arial; 
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-container { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border: 2px solid #444; 
+            background: #2a2a2a;
+        }
+        .spline-container { 
+            width: 100%; 
+            height: 600px; 
+            background: #000; 
+            margin: 20px 0; 
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #555;
+        }
+        spline-viewer { 
+            width: 100% !important; 
+            height: 100% !important; 
+            display: block;
+        }
+        #status {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 20px;
+            border: 1px solid #0f0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .info { color: #0ff; }
+    </style>
+</head>
+<body>
+    <h1>Spline 3D Model Test - Simple Version</h1>
+    
+    <div class="test-container">
+        <h2>Test 1: Hero Character (Direct spline-viewer)</h2>
+        <div class="spline-container">
+            <spline-viewer 
+                url="https://cdn.prod.website-files.com/675835c7f4ae1fa1a79b3733/headless.splinecode"
+                loading="lazy">
+            </spline-viewer>
+        </div>
+    </div>
+    
+    <div id="status"></div>
+    
+    <!-- Load Spline Viewer -->
+    <script type="module">
+        const status = document.getElementById('status');
+        
+        function log(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            status.appendChild(p);
+            status.scrollTop = status.scrollHeight;
+            console.log(message);
+        }
+        
+        log('Page loaded');
+        
+        // Check if spline-viewer is defined
+        function checkViewer() {
+            if (customElements.get('spline-viewer')) {
+                log('✓ spline-viewer component is available!', 'success');
+                
+                // Check if viewer elements exist
+                const viewers = document.querySelectorAll('spline-viewer');
+                log('Found ' + viewers.length + ' spline-viewer element(s)', 'info');
+                
+                viewers.forEach((viewer, index) => {
+                    log('Viewer ' + (index + 1) + ' URL: ' + viewer.getAttribute('url'), 'info');
+                    
+                    // Listen for load events
+                    viewer.addEventListener('load', () => {
+                        log('✓ Viewer ' + (index + 1) + ' loaded successfully!', 'success');
+                    });
+                    
+                    viewer.addEventListener('error', (e) => {
+                        log('✗ Viewer ' + (index + 1) + ' error: ' + JSON.stringify(e), 'error');
+                    });
+                });
+            } else {
+                log('Waiting for spline-viewer component...', 'info');
+                setTimeout(checkViewer, 100);
+            }
+        }
+        
+        // Start checking after a short delay
+        setTimeout(checkViewer, 500);
+        
+        // Also check on window load
+        window.addEventListener('load', () => {
+            setTimeout(checkViewer, 1000);
+        });
+        
+        // Test URL accessibility
+        async function testUrl() {
+            const url = 'https://cdn.prod.website-files.com/675835c7f4ae1fa1a79b3733/headless.splinecode';
+            log('Testing URL accessibility: ' + url, 'info');
+            
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                log('URL test response: ' + response.status + ' ' + response.statusText, 
+                    response.ok ? 'success' : 'error');
+                log('Response headers: ' + JSON.stringify([...response.headers.entries()]), 'info');
+            } catch (error) {
+                log('URL test failed: ' + error.message, 'error');
+            }
+        }
+        
+        setTimeout(testUrl, 2000);
+    </script>
+    
+    <!-- Load Spline Viewer from CDN -->
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@latest/build/spline-viewer.js"></script>
+</body>
+</html>
+

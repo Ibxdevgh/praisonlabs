@@ -1,0 +1,51 @@
+<!-- 
+This is a diagnostic page to test image loading.
+Open this in your browser to verify all images are accessible.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Loading Test - Praison Labs</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .test-image { margin: 10px; border: 2px solid #ccc; padding: 10px; }
+        .test-image img { max-width: 200px; display: block; margin: 10px 0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Image Loading Test</h1>
+    <div id="results"></div>
+    <script>
+        const testImages = [
+            "680aafe79c8c3c831258f954_b52df6557fde79650e779d51ac62459b_cloud-center.webp",
+            "677fd38754fcf94c01549702_3643f974a69a8c92e89b1365d835fdc4_cloud 1.webp",
+            "67d1933d6667d9ff868273fb_Dich_preloader-v2.json",
+            "678d04eaa3ca26bcb4fc7b4a_Sound wave.json"
+        ];
+        
+        const results = document.getElementById("results");
+        
+        testImages.forEach(img => {
+            const div = document.createElement("div");
+            div.className = "test-image";
+            div.innerHTML = `<h3>Testing: ${img}</h3>`;
+            
+            const imgEl = document.createElement("img");
+            imgEl.src = img;
+            imgEl.onload = () => {
+                div.innerHTML += `<p class="success">✓ Loaded successfully</p>`;
+            };
+            imgEl.onerror = () => {
+                div.innerHTML += `<p class="error">✗ Failed to load</p>`;
+            };
+            
+            div.appendChild(imgEl);
+            results.appendChild(div);
+        });
+    </script>
+</body>
+</html>
+
+
