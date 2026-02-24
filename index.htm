@@ -30,8 +30,12 @@
     <link href="favicon/favicon-96x96.png" rel="apple-touch-icon">
     <link rel="preconnect" href="https://cdn.prod.website-files.com">
     
-    <!-- Load Spline Runtime Early -->
-    <script src="https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.0.0/build/runtime.js"></script>
+    <!-- Load Spline Runtime Early (ES Module) -->
+    <script type="module">
+      import { Application } from 'https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.0.0/build/runtime.js';
+      window.Application = Application;
+      window.dispatchEvent(new Event('spline-ready'));
+    </script>
 
     <!-- Text selection color -->
     <style>
@@ -5243,7 +5247,9 @@ Uncomment this CSS to use it in the project. Leave this message for future hand-
           });
         }
 
-        UnicornStudio.init();
+        // Delay UnicornStudio to let Spline claim WebGL contexts first
+        var usDelay = window.Application ? 0 : 3000;
+        setTimeout(function() { UnicornStudio.init(); }, usDelay);
       });
     </script>
 
@@ -5779,25 +5785,37 @@ Uncomment this CSS to use it in the project. Leave this message for future hand-
         
         function tryInit() {
           if (typeof window.Webflow !== 'undefined' && window.Webflow.require) {
-            window.Webflow.require('spline').then(function(m) {
-              if (m && m.init) m.init();
-              setTimeout(manualSplineInit, 1000);
-            }).catch(function() {
+            try {
+              var splineModule = window.Webflow.require('spline');
+              if (splineModule && typeof splineModule.then === 'function') {
+                splineModule.then(function(m) {
+                  if (m && m.init) m.init();
+                  setTimeout(manualSplineInit, 1000);
+                }).catch(function() {
+                  manualSplineInit();
+                });
+              } else {
+                if (splineModule && splineModule.init) splineModule.init();
+                setTimeout(manualSplineInit, 1000);
+              }
+            } catch (e) {
+              console.warn('Webflow spline require failed, falling back:', e.message);
               manualSplineInit();
-            });
+            }
           } else {
             manualSplineInit();
           }
         }
         
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(tryInit, 1000);
-          });
+        // Wait for Spline module to load, then init
+        if (window.Application) {
+          setTimeout(tryInit, 500);
         } else {
-          setTimeout(tryInit, 1000);
+          window.addEventListener('spline-ready', function() {
+            setTimeout(tryInit, 500);
+          });
         }
-        
+
         window.addEventListener('load', function() {
           setTimeout(tryInit, 2000);
         });
